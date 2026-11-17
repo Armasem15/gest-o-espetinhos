@@ -1,0 +1,651 @@
+/* =========================================================
+   TEMA WINDOWS XP (LUNA BLUE) - CONTROLE DE COMANDAS
+   ========================================================= */
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: "Tahoma", "Segoe UI", Verdana, sans-serif;
+  font-size: 12px;
+  color: #000000;
+  /* Papel de parede inspirado no clássico Bliss do Windows XP */
+  background: linear-gradient(
+    180deg,
+    #245edb 0%,
+    #4c8bf5 48%,
+    #88b8f8 56%,
+    #73b63a 57%,
+    #529824 78%,
+    #3d7a16 100%
+  );
+  min-height: 100vh;
+  padding: 16px 16px 48px 16px;
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* =========================================================
+   JANELA PRINCIPAL DO WINDOWS XP
+   ========================================================= */
+.xp-window {
+  max-width: 1120px;
+  margin: 0 auto;
+  background-color: #ece9d8;
+  border: 3px solid #0054e3;
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  overflow: hidden;
+}
+
+/* Barra de Título Azul Brilhante */
+.xp-titlebar {
+  background: linear-gradient(
+    180deg,
+    #0997ff 0%,
+    #0053ee 8%,
+    #0050ee 40%,
+    #0066ff 88%,
+    #005bff 95%,
+    #003dd7 100%
+  );
+  color: #ffffff;
+  padding: 5px 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  user-select: none;
+}
+
+.xp-titlebar-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.xp-app-icon {
+  font-size: 15px;
+}
+
+.xp-title-text {
+  font-weight: bold;
+  font-size: 13px;
+  text-shadow: 1px 1px 1px #001f6b;
+  letter-spacing: 0.2px;
+}
+
+/* Botões Minimizar, Maximizar e Fechar */
+.xp-window-controls {
+  display: flex;
+  gap: 3px;
+}
+
+.xp-win-btn {
+  width: 21px;
+  height: 21px;
+  border: 1px solid #ffffff;
+  border-radius: 3px;
+  background: linear-gradient(180deg, #4b91ff 0%, #1665e8 50%, #0d4bc7 100%);
+  color: #ffffff;
+  font-weight: bold;
+  font-size: 11px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.xp-win-btn:hover {
+  filter: brightness(1.15);
+}
+
+.xp-close-btn {
+  background: linear-gradient(180deg, #f37b63 0%, #df4225 50%, #b8230c 100%);
+}
+
+/* Barra de Menu */
+.xp-menubar {
+  background-color: #ece9d8;
+  border-bottom: 1px solid #aca899;
+  padding: 4px 10px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: 11px;
+}
+
+.xp-menubar span {
+  cursor: default;
+}
+
+.xp-status-badge {
+  margin-left: auto;
+  background: #ffffff;
+  border: 1px solid #7f9db9;
+  padding: 1px 8px;
+  font-size: 11px;
+  color: #003399;
+}
+
+/* Corpo e Abas Estilo XP */
+.xp-body {
+  padding: 10px 12px 14px 12px;
+  background-color: #ece9d8;
+}
+
+.xp-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  position: relative;
+  z-index: 2;
+  margin-bottom: -1px;
+}
+
+.xp-tab {
+  font-family: inherit;
+  font-size: 12px;
+  padding: 6px 14px;
+  border: 1px solid #919b9c;
+  border-bottom: none;
+  border-top-left-radius: 4px;
+  border-top-right-radius: 4px;
+  background: linear-gradient(180deg, #ffffff 0%, #f1efe2 85%, #e3dfd0 100%);
+  color: #222222;
+  cursor: pointer;
+  position: relative;
+}
+
+/* Detalhe laranja no topo das abas ao passar o mouse (marca registrada do XP) */
+.xp-tab:hover {
+  border-top: 2px solid #ffc73c;
+  padding-top: 5px;
+}
+
+.xp-tab.active {
+  background: #ffffff;
+  font-weight: bold;
+  border-top: 2px solid #e68b2c;
+  padding-top: 5px;
+  padding-bottom: 7px;
+  color: #000000;
+}
+
+.xp-tab-panel {
+  background-color: #ffffff;
+  border: 1px solid #919b9c;
+  padding: 14px;
+  box-shadow: 1px 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+/* =========================================================
+   GROUPBOXES, INPUTS E BOTÕES CLÁSSICOS XP
+   ========================================================= */
+.xp-groupbox {
+  border: 1px solid #d0d0bf;
+  border-radius: 4px;
+  padding: 12px;
+  margin-bottom: 12px;
+  background-color: #fbfbf8;
+}
+
+.xp-groupbox legend {
+  color: #003399;
+  font-weight: bold;
+  font-size: 12px;
+  padding: 0 6px;
+}
+
+.xp-input {
+  font-family: inherit;
+  font-size: 12px;
+  padding: 4px 6px;
+  border: 1px solid #7f9db9;
+  background-color: #ffffff;
+  color: #000000;
+  outline: none;
+}
+
+.xp-input:focus {
+  border-color: #0054e3;
+  box-shadow: 0 0 0 1px #8bb8ff;
+}
+
+.xp-input-sm {
+  width: 110px;
+}
+
+.xp-input-emoji {
+  width: 58px;
+}
+
+.xp-btn {
+  font-family: inherit;
+  font-size: 12px;
+  padding: 5px 12px;
+  color: #000000;
+  background: linear-gradient(180deg, #ffffff 0%, #f1efe2 82%, #d6d2c2 100%);
+  border: 1px solid #003c74;
+  border-radius: 3px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+
+.xp-btn:hover {
+  box-shadow: inset 0 0 0 2px #fdd889;
+}
+
+.xp-btn:active {
+  background: linear-gradient(180deg, #d6d2c2 0%, #f1efe2 100%);
+  box-shadow: inset 1px 1px 2px rgba(0, 0, 0, 0.25);
+}
+
+.xp-btn-primary {
+  font-weight: bold;
+  box-shadow: inset 0 0 0 1px #8ab8ff;
+}
+
+.xp-btn-green {
+  background: linear-gradient(180deg, #5ec956 0%, #3aa333 55%, #277d21 100%);
+  color: #ffffff;
+  border-color: #1c5c17;
+  font-weight: bold;
+  text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.4);
+}
+
+.xp-btn-green:hover {
+  box-shadow: inset 0 0 0 2px #a6f2a0;
+}
+
+/* =========================================================
+   LAYOUTS INTERNOS E GRIDS
+   ========================================================= */
+.xp-toolbar-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  background-color: #ece9d8;
+  border: 1px solid #aca899;
+  padding: 8px 10px;
+  margin-bottom: 12px;
+}
+
+.xp-field-inline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.xp-cliente-ativo-banner {
+  background: #ffffe1; /* Amarelo Tooltip clássico do Windows XP */
+  border: 1px solid #000000;
+  padding: 4px 10px;
+  font-size: 12px;
+}
+
+.xp-grid-2col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+@media (max-width: 768px) {
+  .xp-grid-2col {
+    grid-template-columns: 1fr;
+  }
+}
+
+.xp-chip-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.xp-cliente-chip {
+  font-family: inherit;
+  font-size: 12px;
+  padding: 6px 10px;
+  background: linear-gradient(180deg, #ffffff 0%, #ece9d8 100%);
+  border: 1px solid #7f9db9;
+  border-radius: 3px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.xp-cliente-chip:hover {
+  border-color: #e68b2c;
+}
+
+.xp-cliente-chip.active {
+  background: #316ac5; /* Azul de seleção clássico do XP */
+  color: #ffffff;
+  border-color: #003c74;
+  font-weight: bold;
+}
+
+.xp-badge-debt {
+  background-color: #d93829;
+  color: #ffffff;
+  padding: 1px 5px;
+  border-radius: 2px;
+  font-size: 10px;
+}
+
+.xp-prod-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(125px, 1fr));
+  gap: 6px;
+}
+
+.xp-prod-btn {
+  font-family: inherit;
+  padding: 8px;
+  background: linear-gradient(180deg, #ffffff 0%, #f1efe2 85%, #dcd8c8 100%);
+  border: 1px solid #003c74;
+  border-radius: 3px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  text-align: center;
+}
+
+.xp-prod-btn:hover {
+  box-shadow: inset 0 0 0 2px #fdd889;
+}
+
+.xp-prod-btn span {
+  color: #1f7a1f;
+  font-weight: bold;
+}
+
+.xp-scroll-box {
+  border: 1px solid #7f9db9;
+  background-color: #ffffff;
+  padding: 8px;
+  min-height: 110px;
+  max-height: 180px;
+  overflow-y: auto;
+  margin-bottom: 8px;
+}
+
+.xp-scroll-sm {
+  min-height: 90px;
+  max-height: 140px;
+}
+
+.xp-item-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 6px;
+  border-bottom: 1px dotted #d0d0bf;
+}
+
+.xp-item-row:last-child {
+  border-bottom: none;
+}
+
+.xp-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.xp-mini-btn {
+  width: 20px;
+  height: 20px;
+  border: 1px solid #7f9db9;
+  background: #ece9d8;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.xp-subtotal-bar,
+.xp-saldo-destaque {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #ece9d8;
+  border: 1px solid #aca899;
+  padding: 6px 10px;
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+
+.xp-saldo-destaque strong {
+  color: #b8230c;
+  font-size: 15px;
+}
+
+.xp-btn-row,
+.xp-form-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.xp-wrap {
+  flex-wrap: wrap;
+}
+
+.xp-mt {
+  margin-top: 10px;
+}
+
+.xp-muted {
+  color: #666666;
+  font-style: italic;
+}
+
+/* Cards de Estatísticas e Grids */
+.xp-stats-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.xp-stat-card,
+.xp-stat-box {
+  background: #fbfbf8;
+  border: 1px solid #7f9db9;
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.xp-stat-card strong,
+.xp-stat-box strong {
+  font-size: 16px;
+}
+
+.txt-green { color: #1f7a1f; }
+.txt-amber { color: #b86b00; }
+.txt-red { color: #b8230c; }
+
+.xp-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 10px;
+}
+
+.xp-stack-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* =========================================================
+   COMPATIBILIDADE COM CLASSES DINÂMICAS DO JAVASCRIPT
+   ========================================================= */
+.p-3 { padding: 8px 10px; }
+.p-4 { padding: 10px 12px; }
+.p-5 { padding: 12px 14px; }
+.mb-6 { margin-bottom: 12px; }
+.border { border: 1px solid #7f9db9; }
+.border-2 { border: 2px solid #7f9db9; }
+.border-b { border-bottom: 1px solid #d0d0bf; padding-bottom: 6px; }
+.rounded-lg, .rounded-xl { border-radius: 3px; }
+.bg-slate-50 { background-color: #fbfbf8; }
+.bg-emerald-50 { background-color: #eef9ee; }
+.border-emerald-300 { border-color: #3aa333; }
+.bg-red-50 { background-color: #fdeeee; }
+.border-red-300 { border-color: #d93829; }
+.bg-amber-500 {
+  background: linear-gradient(180deg, #ffffff 0%, #f1efe2 82%, #d6d2c2 100%);
+  border: 1px solid #003c74;
+  cursor: pointer;
+}
+.bg-amber-500:hover { box-shadow: inset 0 0 0 2px #fdd889; }
+.bg-red-100 {
+  background: linear-gradient(180deg, #fff0f0 0%, #f5c6c6 100%);
+  border: 1px solid #b8230c;
+  cursor: pointer;
+}
+.bg-emerald-100 { background-color: #d7f3d7; padding: 1px 6px; }
+
+.flex { display: flex; }
+.justify-between { justify-content: space-between; }
+.items-center { align-items: center; }
+.gap-2 { gap: 6px; }
+.gap-3 { gap: 8px; }
+.block { display: block; }
+.w-full { width: 100%; }
+.py-2 { padding-top: 5px; padding-bottom: 5px; }
+.px-2 { padding-left: 8px; padding-right: 8px; }
+.py-1 { padding-top: 3px; padding-bottom: 3px; }
+.text-right { text-align: right; }
+.text-center { text-align: center; }
+.space-y-3 > * + * { margin-top: 8px; }
+.space-y-1 > * + * { margin-top: 4px; }
+.max-h-36 { max-height: 130px; }
+.overflow-y-auto { overflow-y: auto; }
+
+.text-xs { font-size: 11px; }
+.text-sm { font-size: 12px; }
+.text-base { font-size: 13px; }
+.text-lg { font-size: 14px; }
+.text-2xl { font-size: 18px; }
+.text-3xl { font-size: 20px; }
+.font-bold, .font-extrabold, .font-semibold { font-weight: bold; }
+.text-slate-800, .text-slate-900 { color: #000000; }
+.text-slate-600, .text-slate-700 { color: #333333; }
+.text-slate-500, .text-slate-400 { color: #555555; }
+.text-emerald-600, .text-emerald-700, .text-emerald-800 { color: #1f7a1f; }
+.text-red-600, .text-red-700 { color: #b8230c; }
+
+/* =========================================================
+   BARRA DE TAREFAS INFERIOR (WINDOWS XP TASKBAR)
+   ========================================================= */
+.xp-taskbar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 30px;
+  background: linear-gradient(
+    180deg,
+    #3168d5 0%,
+    #4993e6 10%,
+    #245edc 20%,
+    #245edc 88%,
+    #1941a5 100%
+  );
+  display: flex;
+  align-items: center;
+  z-index: 999;
+  user-select: none;
+}
+
+.xp-start-btn {
+  height: 100%;
+  padding: 0 14px 0 10px;
+  border: none;
+  border-top-right-radius: 10px;
+  border-bottom-right-radius: 10px;
+  background: linear-gradient(
+    180deg,
+    #68b85c 0%,
+    #439e37 15%,
+    #388e2d 85%,
+    #296e20 100%
+  );
+  color: #ffffff;
+  font-family: inherit;
+  font-weight: bold;
+  font-style: italic;
+  font-size: 14px;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  box-shadow: 2px 0 4px rgba(0, 0, 0, 0.35);
+}
+
+.xp-start-btn:hover {
+  filter: brightness(1.08);
+}
+
+.xp-taskbar-items {
+  flex: 1;
+  padding: 0 8px;
+  display: flex;
+  align-items: center;
+}
+
+.xp-task-active {
+  background: linear-gradient(180deg, #1b48ad 0%, #19429e 100%);
+  border: 1px solid #102e75;
+  border-radius: 3px;
+  color: #ffffff;
+  font-size: 11px;
+  padding: 4px 12px;
+  box-shadow: inset 1px 1px 2px rgba(0, 0, 0, 0.4);
+}
+
+.xp-tray {
+  height: 100%;
+  background: linear-gradient(180deg, #1690e6 0%, #1076cf 15%, #0f68bd 88%, #0c5296 100%);
+  border-left: 1px solid #0b4682;
+  padding: 0 12px;
+  color: #ffffff;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Barra de rolagem estilo Windows XP */
+::-webkit-scrollbar {
+  width: 15px;
+  height: 15px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1efe2;
+  border-left: 1px solid #d0d0bf;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(90deg, #c7d8f9 0%, #a5c0f3 50%, #83a8ec 100%);
+  border: 1px solid #6b8ac9;
+  border-radius: 2px;
+}

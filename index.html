@@ -1,0 +1,1387 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Controle de Comandas & Caixa - XP Edition</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+  <!-- Janela Principal Estilo Windows XP -->
+  <div class="xp-window">
+    
+    <!-- Barra de Título -->
+    <div class="xp-titlebar">
+      <div class="xp-titlebar-left">
+        <span class="xp-app-icon">🧾</span>
+        <span class="xp-title-text">Gestão de Comandas, Fiado e Caixa.exe</span>
+      </div>
+      <div class="xp-window-controls">
+        <button type="button" class="xp-win-btn" title="Minimizar">_</button>
+        <button type="button" class="xp-win-btn" title="Maximizar">□</button>
+        <button type="button" class="xp-win-btn xp-close-btn" title="Fechar" onclick="alert('Para sair, feche a aba do navegador. Seus dados estão salvos!')">✕</button>
+      </div>
+    </div>
+
+    <!-- Barra de Menu Superior -->
+    <div class="xp-menubar">
+      <span><u>A</u>rquivo</span>
+      <span><u>E</u>xibir</span>
+      <span><u>F</u>erramentas</span>
+      <span><u>A</u>juda</span>
+      <div style="margin-left: auto; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+        <button type="button" class="xp-btn" style="padding: 1px 8px; font-size: 11px;" onclick="sincronizarComNuvem(true)">🔄 Sincronizar</button>
+        <button type="button" class="xp-btn" style="padding: 1px 8px; font-size: 11px;" onclick="abrirConfigSupabase()">☁️ Configurar Supabase</button>
+        <span class="xp-status-badge" id="status-conexao">💾 Modo Local</span>
+      </div>
+    </div>
+
+    <!-- Área Interna da Janela -->
+    <div class="xp-body">
+      
+      <!-- Navegação em Abas Estilo XP -->
+      <div class="xp-tabs">
+        <button type="button" class="xp-tab active" data-aba="comandas" onclick="mudarAba('comandas')">📋 Comandas &amp; Consumo</button>
+        <button type="button" class="xp-tab" data-aba="devedores" onclick="mudarAba('devedores')">📒 Contas a Receber</button>
+        <button type="button" class="xp-tab" data-aba="historico" onclick="mudarAba('historico')">💵 Pagamentos</button>
+        <button type="button" class="xp-tab" data-aba="lucro" onclick="mudarAba('lucro')">📊 Balanço &amp; Lucro</button>
+        <button type="button" class="xp-tab" data-aba="cadastros" onclick="mudarAba('cadastros')">⚙️ Cadastros</button>
+      </div>
+
+      <!-- Painel Branco das Abas -->
+      <div class="xp-tab-panel">
+
+        <!-- ================= ABA 1: COMANDAS ================= -->
+        <section id="aba-comandas" class="aba-conteudo">
+          <div class="xp-toolbar-row">
+            <div class="xp-field-inline">
+              <label for="input-data-evento"> <strong>Data do Evento:</strong></label>
+              <input type="date" id="input-data-evento" class="xp-input" onchange="renderizarTudo()">
+            </div>
+
+            <!-- Botões Rápidos de Cadastro -->
+            <div class="xp-btn-row xp-wrap">
+              <button type="button" class="xp-btn xp-btn-primary" onclick="abrirModalNovoCliente()"> + Novo Cliente</button>
+              <button type="button" class="xp-btn xp-btn-primary" onclick="abrirModalNovoProduto()"> + Novo Produto</button>
+            </div>
+
+            <div class="xp-cliente-ativo-banner" id="banner-cliente-selecionado">
+              Nenhum cliente selecionado
+            </div>
+          </div>
+
+          <div class="xp-grid-2col">
+            <div class="xp-col">
+              <fieldset class="xp-groupbox">
+                <legend>1. Selecione o Amigo / Cliente</legend>
+                <div style="display: flex; justify-content: flex-end; margin-bottom: 8px;">
+                  <button type="button" class="xp-btn" style="padding: 2px 8px; font-size: 11px;" onclick="abrirModalNovoCliente()">+ Registrar Cliente</button>
+                </div>
+                <div id="grid-clientes-comanda" class="xp-chip-grid"></div>
+              </fieldset>
+
+              <fieldset class="xp-groupbox">
+                <legend>2. Adicionar Consumo na Data</legend>
+                <div style="display: flex; justify-content: flex-end; margin-bottom: 8px;">
+                  <button type="button" class="xp-btn" style="padding: 2px 8px; font-size: 11px;" onclick="abrirModalNovoProduto()">+ Registrar Produto e Preço</button>
+                </div>
+                <div id="grid-produtos-comanda" class="xp-prod-grid"></div>
+              </fieldset>
+            </div>
+
+            <div class="xp-col">
+              <fieldset class="xp-groupbox">
+                <legend>3. Consumo Aberto (Não Lançado)</legend>
+                <div id="lista-consumo-hoje" class="xp-scroll-box">
+                  <p class="xp-muted">Selecione um cliente e clique nos produtos ao lado.</p>
+                </div>
+                <div class="xp-subtotal-bar">
+                  <span>Subtotal da Sessão:</span>
+                  <strong id="total-consumo-hoje">R$ 0.00</strong>
+                </div>
+                <div class="xp-btn-row">
+                  <button type="button" class="xp-btn xp-btn-primary" onclick="lancarNaConta()">💾 Lançar na Conta</button>
+                  <button type="button" class="xp-btn" onclick="limparConsumoHoje()"> Limpar Sessão</button>
+                </div>
+              </fieldset>
+
+              <fieldset class="xp-groupbox">
+                <legend>4. Conta Acumulada &amp; Recebimento</legend>
+                <div class="xp-saldo-destaque">
+                  <span>Saldo Devedor Total:</span>
+                  <strong id="saldo-cliente-atual">R$ 0.00</strong>
+                </div>
+                <div id="historico-cliente-atual" class="xp-scroll-box xp-scroll-sm">
+                  <p class="xp-muted">Nenhum débito pendente.</p>
+                </div>
+                <div class="xp-btn-row xp-wrap">
+                  <button type="button" class="xp-btn xp-btn-green" onclick="receberPagamento('PIX')"> Receber PIX</button>
+                  <button type="button" class="xp-btn xp-btn-green" onclick="receberPagamento('Dinheiro')"> Dinheiro</button>
+                  <button type="button" class="xp-btn xp-btn-green" onclick="receberPagamento('Cartão')"> Cartão</button>
+                  <button type="button" class="xp-btn" onclick="copiarExtratoWhatsApp()"> Copiar Extrato WhatsApp</button>
+                </div>
+              </fieldset>
+            </div>
+          </div>
+        </section>
+
+        <!-- ================= ABA 2: DEVEDORES / FIADO ================= -->
+        <section id="aba-devedores" class="aba-conteudo hidden">
+          <div class="xp-toolbar-row">
+            <div class="xp-field-inline">
+              <label for="filtro-data-evento"> <strong>Filtrar por Evento:</strong></label>
+              <select id="filtro-data-evento" class="xp-input" onchange="renderizarDevedores()">
+                <option value="">Todas as Datas (Acumulado)</option>
+              </select>
+            </div>
+            <div class="xp-stat-box xp-stat-red">
+              <span>Total a Receber:</span>
+              <strong id="stat-total-a-receber">R$ 0.00</strong>
+            </div>
+          </div>
+
+          <fieldset class="xp-groupbox">
+            <legend>Clientes com Saldo Pendente</legend>
+            <div id="lista-saldos-devedores" class="xp-cards-grid"></div>
+          </fieldset>
+        </section>
+
+        <!-- ================= ABA 3: HISTÓRICO DE PAGAMENTOS ================= -->
+        <section id="aba-historico" class="aba-conteudo hidden">
+          <div class="xp-toolbar-row">
+            <div class="xp-field-inline">
+              <label for="filtro-cliente-historico">👤 <strong>Filtrar por Cliente:</strong></label>
+              <select id="filtro-cliente-historico" class="xp-input" onchange="renderizarHistorico()">
+                <option value="">Todos os clientes</option>
+              </select>
+            </div>
+            <div class="xp-stat-box xp-stat-green">
+              <span>Total Arrecadado:</span>
+              <strong id="stat-total-arrecadado">R$ 0.00</strong>
+            </div>
+          </div>
+
+          <fieldset class="xp-groupbox">
+            <legend>Registro de Recebimentos</legend>
+            <div id="lista-historico-pagamentos" class="xp-stack-list"></div>
+          </fieldset>
+        </section>
+
+        <!-- ================= ABA 4: BALANÇO & LUCRO ================= -->
+        <section id="aba-lucro" class="aba-conteudo hidden">
+          <div class="xp-stats-row">
+            <div class="xp-stat-card">
+              <span>Vendas Totais</span>
+              <strong id="stat-lucro-vendas">R$ 0.00</strong>
+            </div>
+            <div class="xp-stat-card">
+              <span>Já Recebido</span>
+              <strong id="stat-lucro-recebido" class="txt-green">R$ 0.00</strong>
+            </div>
+            <div class="xp-stat-card">
+              <span>A Receber (Fiado)</span>
+              <strong id="stat-lucro-fiado" class="txt-amber">R$ 0.00</strong>
+            </div>
+            <div class="xp-stat-card">
+              <span>Compras / Gastos</span>
+              <strong id="stat-lucro-gastos" class="txt-red">R$ 0.00</strong>
+            </div>
+          </div>
+
+          <div id="card-lucro-liquido" class="p-5 bg-emerald-50 border-2 border-emerald-300 rounded-xl mb-6 flex justify-between items-center">
+            <div>
+              <strong>LUCRO LÍQUIDO ESTIMADO</strong>
+              <div class="text-xs text-slate-500">(Vendas Recebidas + Fiado) - Compras/Insumos</div>
+            </div>
+            <span id="stat-lucro-liquido" class="text-3xl font-extrabold text-emerald-700">R$ 0.00</span>
+          </div>
+
+          <div class="xp-grid-2col">
+            <fieldset class="xp-groupbox">
+              <legend>Registrar Compra / Despesa</legend>
+              <form onsubmit="salvarCompra(event)" class="xp-form-row">
+                <input type="text" id="input-desc-compra" class="xp-input" placeholder="Ex: Gelo, Carvão, Copos" required>
+                <input type="number" step="0.01" id="input-valor-compra" class="xp-input xp-input-sm" placeholder="Valor (R$)" required>
+                <button type="submit" class="xp-btn xp-btn-primary">+ Lançar</button>
+              </form>
+              <div id="lista-compras-registradas" class="xp-stack-list xp-mt"></div>
+            </fieldset>
+
+            <fieldset class="xp-groupbox">
+              <legend>Margem de Lucro por Produto</legend>
+              <div id="tabela-margem-produtos" class="xp-stack-list"></div>
+            </fieldset>
+          </div>
+        </section>
+
+        <!-- ================= ABA 5: CADASTROS ================= -->
+        <section id="aba-cadastros" class="aba-conteudo hidden">
+          <div class="xp-grid-2col">
+            <fieldset class="xp-groupbox">
+              <legend>Cadastrar Amigos / Clientes</legend>
+              <form onsubmit="salvarCliente(event)" class="xp-form-row">
+                <select id="select-emoji-cliente" class="xp-input xp-input-emoji"></select>
+                <input type="text" id="input-nome-cliente" class="xp-input" placeholder="Nome do cliente..." required>
+                <button type="submit" class="xp-btn xp-btn-primary">Adicionar</button>
+              </form>
+              <div id="lista-clientes-cadastrados" class="xp-stack-list xp-mt"></div>
+            </fieldset>
+
+            <fieldset class="xp-groupbox">
+              <legend>Cadastrar Produtos e Preços</legend>
+              <form onsubmit="salvarProduto(event)" class="xp-form-row xp-wrap">
+                <input type="text" id="input-nome-prod" class="xp-input" placeholder="Nome do produto" required>
+                <input type="number" step="0.01" id="input-custo-prod" class="xp-input xp-input-sm" placeholder="Custo (R$)">
+                <input type="number" step="0.01" id="input-preco-prod" class="xp-input xp-input-sm" placeholder="Preço Venda (R$)" required>
+                <button type="submit" class="xp-btn xp-btn-primary">Adicionar</button>
+              </form>
+              <div id="lista-produtos-cadastrados" class="xp-stack-list xp-mt"></div>
+            </fieldset>
+          </div>
+        </section>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================
+       JANELA MODAL XP: REGISTRAR NOVO CLIENTE
+       ========================================================= -->
+  <dialog id="modal-novo-cliente" style="border: 3px solid #0054e3; border-radius: 6px; padding: 0; background: #ece9d8; width: 92%; max-width: 380px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+    <div class="xp-titlebar">
+      <div class="xp-titlebar-left">
+        <span class="xp-app-icon">👤</span>
+        <span class="xp-title-text">Registrar Novo Cliente</span>
+      </div>
+      <button type="button" class="xp-win-btn xp-close-btn" onclick="document.getElementById('modal-novo-cliente').close()">✕</button>
+    </div>
+    <form onsubmit="salvarNovoClienteModal(event)" style="padding: 14px; display: flex; flex-direction: column; gap: 10px;">
+      <div style="display: flex; gap: 8px; align-items: flex-end;">
+        <div>
+          <label for="modal-emoji-cliente" style="display: block; font-weight: bold; margin-bottom: 3px;">Ícone:</label>
+          <select id="modal-emoji-cliente" class="xp-input xp-input-emoji"></select>
+        </div>
+        <div style="flex: 1;">
+          <label for="modal-nome-cliente" style="display: block; font-weight: bold; margin-bottom: 3px;">Nome do Cliente:</label>
+          <input type="text" id="modal-nome-cliente" class="xp-input" style="width: 100%;" placeholder="Ex: Lucas Silva" required>
+        </div>
+      </div>
+      <div class="xp-btn-row" style="justify-content: flex-end; margin-top: 6px;">
+        <button type="button" class="xp-btn" onclick="document.getElementById('modal-novo-cliente').close()">Cancelar</button>
+        <button type="submit" class="xp-btn xp-btn-primary"> Salvar Cliente</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- =========================================================
+       JANELA MODAL XP: REGISTRAR NOVO PRODUTO COM PREÇO
+       ========================================================= -->
+  <dialog id="modal-novo-produto" style="border: 3px solid #0054e3; border-radius: 6px; padding: 0; background: #ece9d8; width: 92%; max-width: 400px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+    <div class="xp-titlebar">
+      <div class="xp-titlebar-left">
+        <span class="xp-app-icon">🏷️</span>
+        <span class="xp-title-text">Registrar Novo Produto</span>
+      </div>
+      <button type="button" class="xp-win-btn xp-close-btn" onclick="document.getElementById('modal-novo-produto').close()">✕</button>
+    </div>
+    <form onsubmit="salvarNovoProdutoModal(event)" style="padding: 14px; display: flex; flex-direction: column; gap: 10px;">
+      <div>
+        <label for="modal-nome-prod" style="display: block; font-weight: bold; margin-bottom: 3px;">Nome do Produto:</label>
+        <input type="text" id="modal-nome-prod" class="xp-input" style="width: 100%;" placeholder="Ex: Suco Natural, Pastel, Água" required>
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+        <div>
+          <label for="modal-preco-prod" style="display: block; font-weight: bold; margin-bottom: 3px;">Preço de Venda (R$):</label>
+          <input type="number" step="0.01" min="0.01" id="modal-preco-prod" class="xp-input" style="width: 100%;" placeholder="Ex: 7.50" required>
+        </div>
+        <div>
+          <label for="modal-custo-prod" style="display: block; font-weight: bold; margin-bottom: 3px;">Custo (Opcional - R$):</label>
+          <input type="number" step="0.01" min="0" id="modal-custo-prod" class="xp-input" style="width: 100%;" placeholder="Ex: 3.00">
+        </div>
+      </div>
+      <div class="xp-btn-row" style="justify-content: flex-end; margin-top: 6px;">
+        <button type="button" class="xp-btn" onclick="document.getElementById('modal-novo-produto').close()">Cancelar</button>
+        <button type="submit" class="xp-btn xp-btn-primary"> Salvar Produto</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- =========================================================
+       JANELA MODAL XP: CONFIGURAR SUPABASE
+       ========================================================= -->
+  <dialog id="modal-supabase" style="border: 3px solid #0054e3; border-radius: 6px; padding: 0; background: #ece9d8; width: 92%; max-width: 440px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+    <div class="xp-titlebar">
+      <div class="xp-titlebar-left">
+        <span class="xp-app-icon"></span>
+        <span class="xp-title-text">Conexão com Banco de Dados Supabase</span>
+      </div>
+      <button type="button" class="xp-win-btn xp-close-btn" onclick="document.getElementById('modal-supabase').close()">✕</button>
+    </div>
+    <form onsubmit="salvarConfigSupabase(event)" style="padding: 14px; display: flex; flex-direction: column; gap: 10px;">
+      <p style="font-size: 11px; color: #333;">Pegue esses dados no painel do Supabase em <strong>Project Settings &gt; API</strong>:</p>
+      <div>
+        <label style="display: block; font-weight: bold; margin-bottom: 3px;">Project URL:</label>
+        <input type="url" id="cfg-supabase-url" class="xp-input" style="width: 100%;" placeholder="https://seu-projeto.supabase.co" required>
+      </div>
+      <div>
+        <label style="display: block; font-weight: bold; margin-bottom: 3px;">API Key (anon / public):</label>
+        <input type="text" id="cfg-supabase-key" class="xp-input" style="width: 100%;" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6..." required>
+      </div>
+      <div class="xp-btn-row" style="justify-content: flex-end; margin-top: 6px;">
+        <button type="button" class="xp-btn" onclick="desconectarSupabase()">Desconectar</button>
+        <button type="button" class="xp-btn" onclick="document.getElementById('modal-supabase').close()">Cancelar</button>
+        <button type="submit" class="xp-btn xp-btn-primary">Conectar &amp; Sincronizar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Barra de Tarefas Estilo Windows XP -->
+  <footer class="xp-taskbar">
+    <button type="button" class="xp-start-btn" onclick="mudarAba('comandas')">
+      <span class="xp-win-flag">🪟</span>
+      <span>iniciar</span>
+    </button>
+    <div class="xp-taskbar-items">
+      <div class="xp-task-active">🧾 Controle de Comandas &amp; Caixa</div>
+    </div>
+    <div class="xp-tray">
+      <span title="Dados salvos"></span>
+      <span id="xp-clock">00:00</span>
+    </div>
+  </footer>
+
+  <script>
+    // =========================================================
+    // CONFIGURAÇÃO DO SUPABASE
+    // =========================================================
+    const DEFAULT_SUPABASE_URL = 'https://pzewkmocnibocpjhuqgn.supabase.co';
+    const DEFAULT_SUPABASE_KEY = 'sb_publishable_JmJgyW4McpiZheda62fELw_OPdSyzZX';
+
+    let supabaseClient = null;
+
+    function atualizarStatusConexao(texto, cor = '#003399') {
+      const badge = document.getElementById('status-conexao');
+      if (badge) {
+        badge.innerText = texto;
+        badge.style.color = cor;
+      }
+    }
+
+    function inicializarSupabase() {
+      const url = localStorage.getItem('xp_supabase_url') || DEFAULT_SUPABASE_URL;
+      const key = localStorage.getItem('xp_supabase_key') || DEFAULT_SUPABASE_KEY;
+
+      if (url && key && window.supabase) {
+        try {
+          supabaseClient = window.supabase.createClient(url, key);
+          atualizarStatusConexao(' Supabase Conectado', '#1f7a1f');
+          sincronizarComNuvem(false);
+        } catch (err) {
+          console.error('Erro ao iniciar Supabase:', err);
+          supabaseClient = null;
+          atualizarStatusConexao(' Erro na Configuração', '#b8230c');
+        }
+      } else {
+        supabaseClient = null;
+        atualizarStatusConexao(' Modo Local', '#003399');
+      }
+    }
+
+    function abrirConfigSupabase() {
+      document.getElementById('cfg-supabase-url').value = localStorage.getItem('xp_supabase_url') || DEFAULT_SUPABASE_URL;
+      document.getElementById('cfg-supabase-key').value = localStorage.getItem('xp_supabase_key') || DEFAULT_SUPABASE_KEY;
+      document.getElementById('modal-supabase').showModal();
+    }
+
+    function salvarConfigSupabase(e) {
+      e.preventDefault();
+      const url = document.getElementById('cfg-supabase-url').value.trim();
+      const key = document.getElementById('cfg-supabase-key').value.trim();
+      localStorage.setItem('xp_supabase_url', url);
+      localStorage.setItem('xp_supabase_key', key);
+      document.getElementById('modal-supabase').close();
+      inicializarSupabase();
+    }
+
+    function desconectarSupabase() {
+      localStorage.removeItem('xp_supabase_url');
+      localStorage.removeItem('xp_supabase_key');
+      supabaseClient = null;
+      document.getElementById('modal-supabase').close();
+      atualizarStatusConexao(' Modo Local', '#003399');
+      alert('Desconectado do Supabase. O sistema continuará funcionando localmente.');
+    }
+
+    async function executarNaNuvem(promessa) {
+      if (!supabaseClient) return;
+      atualizarStatusConexao(' Sincronizando...', '#b86b00');
+      try {
+        const { error } = await promessa;
+        if (error) throw error;
+        atualizarStatusConexao(' Sincronizado', '#1f7a1f');
+      } catch (err) {
+        console.error('Falha na sincronização Supabase:', err);
+        atualizarStatusConexao(' Erro de Sincronia', '#b8230c');
+      }
+    }
+
+    async function enviarTudoParaNuvem() {
+      if (!supabaseClient) return;
+      if (db.clientes.length > 0) {
+        await supabaseClient.from('clientes').upsert(db.clientes);
+      }
+      if (db.produtos.length > 0) {
+        await supabaseClient.from('produtos').upsert(db.produtos);
+      }
+      const saldosRows = Object.entries(db.saldos).map(([cliente_nome, dados]) => ({
+        cliente_nome,
+        total: dados.total || 0,
+        historico: dados.historico || []
+      }));
+      if (saldosRows.length > 0) {
+        await supabaseClient.from('saldos').upsert(saldosRows);
+      }
+      if (db.pagamentos.length > 0) {
+        const vendasRows = db.pagamentos.map(p => ({
+          id: p.id,
+          cliente_nome: p.cliente,
+          data: p.data,
+          total: p.valor,
+          forma_pagamento: p.formaPagamento,
+          historico_backup: p.historicoBackup || []
+        }));
+        await supabaseClient.from('vendas').upsert(vendasRows);
+      }
+      if (db.compras.length > 0) {
+        await supabaseClient.from('compras').upsert(db.compras);
+      }
+    }
+
+    async function sincronizarComNuvem(mostrarAlerta = false) {
+      if (!supabaseClient) {
+        if (mostrarAlerta) alert('Configure a URL e a Key do Supabase primeiro!');
+        return;
+      }
+
+      atualizarStatusConexao(' Baixando dados...', '#b86b00');
+
+      try {
+        const [resCli, resProd, resSaldos, resVendas, resCompras] = await Promise.all([
+          supabaseClient.from('clientes').select('*'),
+          supabaseClient.from('produtos').select('*'),
+          supabaseClient.from('saldos').select('*'),
+          supabaseClient.from('vendas').select('*').order('id', { ascending: false }),
+          supabaseClient.from('compras').select('*').order('id', { ascending: false })
+        ]);
+
+        if (resCli.error) throw resCli.error;
+        if (resProd.error) throw resProd.error;
+        if (resSaldos.error) throw resSaldos.error;
+        if (resVendas.error) throw resVendas.error;
+        if (resCompras.error) throw resCompras.error;
+
+        const nuvemVazia =
+          resCli.data.length === 0 &&
+          resProd.data.length === 0 &&
+          resSaldos.data.length === 0 &&
+          resVendas.data.length === 0 &&
+          resCompras.data.length === 0;
+
+        if (nuvemVazia) {
+          await enviarTudoParaNuvem();
+        } else {
+          db.clientes = resCli.data.map(c => ({
+            id: String(c.id),
+            nome: c.nome,
+            emoji: c.emoji || ''
+          }));
+
+          db.produtos = resProd.data.map(p => ({
+            id: Number(p.id),
+            nome: p.nome,
+            custo: Number(p.custo || 0),
+            preco: Number(p.preco)
+          }));
+
+          const novosSaldos = {};
+          resSaldos.data.forEach(s => {
+            novosSaldos[s.cliente_nome] = {
+              total: Number(s.total || 0),
+              historico: Array.isArray(s.historico) ? s.historico : []
+            };
+          });
+          db.saldos = novosSaldos;
+
+          db.pagamentos = resVendas.data.map(v => ({
+            id: Number(v.id),
+            cliente: v.cliente_nome,
+            data: v.data || '',
+            valor: Number(v.total),
+            formaPagamento: v.forma_pagamento || 'PIX',
+            historicoBackup: Array.isArray(v.historico_backup) ? v.historico_backup : []
+          }));
+
+          db.compras = resCompras.data.map(c => ({
+            id: Number(c.id),
+            descricao: c.descricao,
+            valor: Number(c.valor),
+            data: c.data || ''
+          }));
+
+          salvarLocal();
+          renderizarTudo();
+        }
+
+        atualizarStatusConexao(' Sincronizado', '#1f7a1f');
+        if (mostrarAlerta) alert('Dados sincronizados com o Supabase com sucesso!');
+      } catch (err) {
+        console.error('Erro ao sincronizar com Supabase:', err);
+        atualizarStatusConexao('⚠️ Erro na Nuvem', '#b8230c');
+        if (mostrarAlerta) alert('Erro ao conectar com o Supabase. Verifique a URL, a Key e se as tabelas SQL foram criadas.');
+      }
+    }
+
+    // =========================================================
+    // BANCO LOCAL E LÓGICA DO SISTEMA
+    // =========================================================
+    const STORAGE_KEY = 'comandas_xp_db_v1';
+    let db = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {
+      clientes: [
+        { id: '1', nome: '', emoji: '' },
+        { id: '2', nome: '', emoji: '' }
+      ],
+      produtos: [
+        { id: 101, nome: 'Refrigerante Lata', custo: 2.50, preco: 5.00 },
+        { id: 102, nome: 'Salgado Assado', custo: 3.50, preco: 7.00 },
+        { id: 103, nome: 'Suco Natural', custo: 3.00, preco: 6.50 }
+      ],
+      saldos: {},
+      consumoHoje: {},
+      pagamentos: [],
+      compras: []
+    };
+
+    let clienteAtual = null;
+
+    const inputDataEvento = document.getElementById('input-data-evento');
+    inputDataEvento.value = new Date().toISOString().split('T')[0];
+
+    function arredondar(valor) {
+      return Math.round((valor + Number.EPSILON) * 100) / 100;
+    }
+
+    function salvarLocal() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
+    }
+
+    function formatarDataBR(dataIso) {
+      if (!dataIso) return '';
+      const [ano, mes, dia] = dataIso.split('-');
+      return `${dia}/${mes}/${ano}`;
+    }
+
+    function escaparAspas(texto) {
+      return String(texto).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+    }
+
+    function mudarAba(aba) {
+      document.querySelectorAll('.aba-conteudo').forEach(el => el.classList.add('hidden'));
+      document.querySelectorAll('.xp-tab').forEach(btn => btn.classList.remove('active'));
+
+      const alvo = document.getElementById(`aba-${aba}`);
+      const botao = document.querySelector(`.xp-tab[data-aba="${aba}"]`);
+      if (alvo) alvo.classList.remove('hidden');
+      if (botao) botao.classList.add('active');
+    }
+
+    function preencherSelectEmojis() {
+      const emojis = ['', '', '', '', '', '', '', '', '', '', '', ''];
+      const optionsHTML = emojis.map(e => `<option value="${e}">${e}</option>`).join('');
+      const selectAba = document.getElementById('select-emoji-cliente');
+      const selectModal = document.getElementById('modal-emoji-cliente');
+      if (selectAba) selectAba.innerHTML = optionsHTML;
+      if (selectModal) selectModal.innerHTML = optionsHTML;
+    }
+
+    // =========================================================
+    // MODAIS RÁPIDOS DE CADASTRO DE CLIENTE E PRODUTO
+    // =========================================================
+    function abrirModalNovoCliente() {
+      document.getElementById('modal-nome-cliente').value = '';
+      document.getElementById('modal-novo-cliente').showModal();
+      setTimeout(() => document.getElementById('modal-nome-cliente').focus(), 50);
+    }
+
+    function salvarNovoClienteModal(e) {
+      e.preventDefault();
+      const inputNome = document.getElementById('modal-nome-cliente');
+      const selectEmoji = document.getElementById('modal-emoji-cliente');
+      const nome = inputNome.value.trim();
+      const emoji = selectEmoji.value;
+
+      if (!nome) return;
+      if (db.clientes.some(c => c.nome.toLowerCase() === nome.toLowerCase())) {
+        return alert('Já existe um cliente cadastrado com esse nome!');
+      }
+
+      const novoCliente = { id: String(Date.now()), nome, emoji };
+      db.clientes.push(novoCliente);
+      clienteAtual = novoCliente.nome; // Já deixa selecionado na comanda
+      salvarLocal();
+
+      if (supabaseClient) {
+        executarNaNuvem(supabaseClient.from('clientes').insert([novoCliente]));
+      }
+
+      document.getElementById('modal-novo-cliente').close();
+      renderizarTudo();
+    }
+
+    function abrirModalNovoProduto() {
+      document.getElementById('modal-nome-prod').value = '';
+      document.getElementById('modal-preco-prod').value = '';
+      document.getElementById('modal-custo-prod').value = '';
+      document.getElementById('modal-novo-produto').showModal();
+      setTimeout(() => document.getElementById('modal-nome-prod').focus(), 50);
+    }
+
+    function salvarNovoProdutoModal(e) {
+      e.preventDefault();
+      const nome = document.getElementById('modal-nome-prod').value.trim();
+      const preco = parseFloat(document.getElementById('modal-preco-prod').value);
+      const custo = parseFloat(document.getElementById('modal-custo-prod').value) || 0;
+
+      if (!nome || isNaN(preco) || preco <= 0) {
+        return alert('Informe o nome do produto e um preço válido!');
+      }
+
+      const novoProd = {
+        id: Date.now(),
+        nome,
+        custo: arredondar(custo),
+        preco: arredondar(preco)
+      };
+
+      db.produtos.push(novoProd);
+      salvarLocal();
+
+      if (supabaseClient) {
+        executarNaNuvem(supabaseClient.from('produtos').insert([novoProd]));
+      }
+
+      document.getElementById('modal-novo-produto').close();
+      renderizarTudo();
+    }
+
+    // =========================================================
+    // OPERAÇÕES DE COMANDA E CAIXA
+    // =========================================================
+    function selecionarCliente(nome) {
+      clienteAtual = nome;
+      renderizarTudo();
+    }
+
+    function adicionarItemConsumo(idProd) {
+      if (!clienteAtual) return alert('Selecione um cliente primeiro!');
+      const dataIso = document.getElementById('input-data-evento').value;
+      const chaveConsumo = `${clienteAtual}_${dataIso}`;
+
+      if (!db.consumoHoje[chaveConsumo]) {
+        db.consumoHoje[chaveConsumo] = [];
+      }
+
+      const existente = db.consumoHoje[chaveConsumo].find(i => i.idProd === idProd);
+      if (existente) {
+        existente.qtd += 1;
+      } else {
+        db.consumoHoje[chaveConsumo].push({ idProd, qtd: 1 });
+      }
+
+      salvarLocal();
+      renderizarComandas();
+    }
+
+    function alterarQtdConsumo(idProd, delta) {
+      if (!clienteAtual) return;
+      const dataIso = document.getElementById('input-data-evento').value;
+      const chaveConsumo = `${clienteAtual}_${dataIso}`;
+      const lista = db.consumoHoje[chaveConsumo] || [];
+      const item = lista.find(i => i.idProd === idProd);
+
+      if (item) {
+        item.qtd += delta;
+        if (item.qtd <= 0) {
+          db.consumoHoje[chaveConsumo] = lista.filter(i => i.idProd !== idProd);
+        }
+        salvarLocal();
+        renderizarComandas();
+      }
+    }
+
+    function lancarNaConta() {
+      if (!clienteAtual) return alert('Selecione um cliente primeiro!');
+      const dataIso = document.getElementById('input-data-evento').value;
+      const dataBr = formatarDataBR(dataIso);
+      const chaveConsumo = `${clienteAtual}_${dataIso}`;
+      const itens = db.consumoHoje[chaveConsumo] || [];
+
+      if (itens.length === 0) return alert('Adicione algum item ao consumo antes de lançar!');
+
+      if (!db.saldos[clienteAtual]) {
+        db.saldos[clienteAtual] = { total: 0, historico: [] };
+      }
+
+      let totalLancado = 0;
+
+      itens.forEach(item => {
+        const prod = db.produtos.find(p => p.id === item.idProd);
+        if (prod) {
+          const subtotal = arredondar(item.qtd * prod.preco);
+          totalLancado = arredondar(totalLancado + subtotal);
+          db.saldos[clienteAtual].historico.push({
+            data: dataBr,
+            dataIso: dataIso,
+            descricao: `${item.qtd}x ${prod.nome}`,
+            valor: subtotal
+          });
+        }
+      });
+
+      db.saldos[clienteAtual].total = arredondar(db.saldos[clienteAtual].total + totalLancado);
+      delete db.consumoHoje[chaveConsumo];
+      salvarLocal();
+
+      if (supabaseClient) {
+        executarNaNuvem(
+          supabaseClient.from('saldos').upsert([{
+            cliente_nome: clienteAtual,
+            total: db.saldos[clienteAtual].total,
+            historico: db.saldos[clienteAtual].historico
+          }])
+        );
+      }
+
+      alert(`Lançado R$ ${totalLancado.toFixed(2)} na conta de ${clienteAtual} (${dataBr})!`);
+      renderizarTudo();
+    }
+
+    function receberPagamento(meio) {
+      if (!clienteAtual) return alert('Selecione um cliente primeiro!');
+      const saldoAtual = (db.saldos[clienteAtual] && db.saldos[clienteAtual].total) || 0;
+
+      if (saldoAtual <= 0) return alert(`${clienteAtual} não possui débitos pendentes!`);
+
+      const valorPagoInput = prompt(
+        `Saldo acumulado de ${clienteAtual}: R$ ${saldoAtual.toFixed(2)}\nDigite o valor a abater/pagar:`,
+        saldoAtual.toFixed(2)
+      );
+      if (valorPagoInput === null) return;
+
+      const valorPago = parseFloat(valorPagoInput.replace(',', '.'));
+
+      if (valorPago && !isNaN(valorPago) && valorPago > 0) {
+        const historicoBackup = JSON.parse(JSON.stringify(db.saldos[clienteAtual].historico || []));
+
+        db.saldos[clienteAtual].total = arredondar(db.saldos[clienteAtual].total - valorPago);
+        if (db.saldos[clienteAtual].total <= 0) {
+          db.saldos[clienteAtual].total = 0;
+          db.saldos[clienteAtual].historico = [];
+        }
+
+        const registroPagamento = {
+          id: Date.now(),
+          cliente: clienteAtual,
+          data: new Date().toLocaleString('pt-BR'),
+          valor: arredondar(valorPago),
+          formaPagamento: meio,
+          historicoBackup: historicoBackup
+        };
+
+        db.pagamentos.unshift(registroPagamento);
+        salvarLocal();
+
+        if (supabaseClient) {
+          executarNaNuvem(
+            Promise.all([
+              supabaseClient.from('saldos').upsert([{
+                cliente_nome: clienteAtual,
+                total: db.saldos[clienteAtual].total,
+                historico: db.saldos[clienteAtual].historico
+              }]),
+              supabaseClient.from('vendas').insert([{
+                id: registroPagamento.id,
+                cliente_nome: clienteAtual,
+                data: registroPagamento.data,
+                total: registroPagamento.valor,
+                forma_pagamento: meio,
+                historico_backup: historicoBackup
+              }])
+            ])
+          );
+        }
+
+        alert(`Pagamento de R$ ${valorPago.toFixed(2)} recebido de ${clienteAtual}!`);
+        renderizarTudo();
+      }
+    }
+
+    function estornarPagamento(idPagamento) {
+      const pgt = db.pagamentos.find(p => p.id === idPagamento);
+      if (!pgt) return;
+
+      if (confirm(`Deseja CANCELAR/ESTORNAR o pagamento de R$ ${pgt.valor.toFixed(2)} de ${pgt.cliente}?\nO valor voltará para a dívida do cliente.`)) {
+        if (!db.saldos[pgt.cliente]) {
+          db.saldos[pgt.cliente] = { total: 0, historico: [] };
+        }
+
+        db.saldos[pgt.cliente].total = arredondar(db.saldos[pgt.cliente].total + pgt.valor);
+
+        if (pgt.historicoBackup && pgt.historicoBackup.length > 0) {
+          db.saldos[pgt.cliente].historico = pgt.historicoBackup;
+        }
+
+        db.pagamentos = db.pagamentos.filter(p => p.id !== idPagamento);
+        salvarLocal();
+
+        if (supabaseClient) {
+          executarNaNuvem(
+            Promise.all([
+              supabaseClient.from('saldos').upsert([{
+                cliente_nome: pgt.cliente,
+                total: db.saldos[pgt.cliente].total,
+                historico: db.saldos[pgt.cliente].historico
+              }]),
+              supabaseClient.from('vendas').delete().eq('id', idPagamento)
+            ])
+          );
+        }
+
+        alert(`Estorno de R$ ${pgt.valor.toFixed(2)} realizado com sucesso!\nA dívida de ${pgt.cliente} foi restaurada.`);
+        renderizarTudo();
+      }
+    }
+
+    function copiarExtratoWhatsApp() {
+      if (!clienteAtual) return alert('Selecione um cliente!');
+      const saldo = (db.saldos[clienteAtual] && db.saldos[clienteAtual].total) || 0;
+      const historico = (db.saldos[clienteAtual] && db.saldos[clienteAtual].historico) || [];
+
+      if (saldo <= 0) return alert(`${clienteAtual} está com a conta quitada!`);
+
+      let texto = `*EXTRATO DE CONTA ACUMULADA*\n`;
+      texto += `👤 *Cliente:* ${clienteAtual}\n`;
+      texto += `💰 *Saldo Total Pendente:* R$ ${saldo.toFixed(2)}\n\n`;
+      texto += `*Consumo por Data de Evento:*\n`;
+
+      historico.forEach(h => {
+        texto += `• *${h.data}*: ${h.descricao} — R$ ${h.valor.toFixed(2)}\n`;
+      });
+
+      texto += `\n_Favor realizar o pagamento via PIX quando possível! Obrigado!_`;
+
+      navigator.clipboard.writeText(texto).then(() => {
+        alert('Extrato detalhado por datas copiado! Abra o WhatsApp e cole.');
+      });
+    }
+
+    // =========================================================
+    // RENDERIZAÇÃO DAS TELAS
+    // =========================================================
+    function renderizarComandas() {
+      const gridClientes = document.getElementById('grid-clientes-comanda');
+      const gridProdutos = document.getElementById('grid-produtos-comanda');
+      const bannerCliente = document.getElementById('banner-cliente-selecionado');
+      const listaConsumo = document.getElementById('lista-consumo-hoje');
+      const elTotalHoje = document.getElementById('total-consumo-hoje');
+      const elSaldoAtual = document.getElementById('saldo-cliente-atual');
+      const elHistCliente = document.getElementById('historico-cliente-atual');
+
+      gridClientes.innerHTML = db.clientes.map(c => {
+        const saldo = (db.saldos[c.nome] && db.saldos[c.nome].total) || 0;
+        const ativo = c.nome === clienteAtual ? 'active' : '';
+        return `
+          <button type="button" class="xp-cliente-chip ${ativo}" onclick="selecionarCliente('${escaparAspas(c.nome)}')">
+            <span>${c.emoji} ${c.nome}</span>
+            ${saldo > 0 ? `<small class="xp-badge-debt">R$ ${saldo.toFixed(2)}</small>` : ''}
+          </button>
+        `;
+      }).join('');
+
+      gridProdutos.innerHTML = db.produtos.map(p => `
+        <button type="button" class="xp-prod-btn" onclick="adicionarItemConsumo(${p.id})">
+          <strong>${p.nome}</strong>
+          <span>R$ ${p.preco.toFixed(2)}</span>
+        </button>
+      `).join('');
+
+      if (!clienteAtual) {
+        bannerCliente.innerHTML = 'Nenhum cliente selecionado';
+        listaConsumo.innerHTML = '<p class="xp-muted">Selecione um cliente acima para iniciar.</p>';
+        elTotalHoje.innerText = 'R$ 0.00';
+        elSaldoAtual.innerText = 'R$ 0.00';
+        elHistCliente.innerHTML = '<p class="xp-muted">Nenhum cliente selecionado.</p>';
+        return;
+      }
+
+      const cliObj = db.clientes.find(c => c.nome === clienteAtual);
+      bannerCliente.innerHTML = `Atendendo: <strong>${cliObj ? cliObj.emoji : '👤'} ${clienteAtual}</strong>`;
+
+      const dataIso = document.getElementById('input-data-evento').value;
+      const chaveConsumo = `${clienteAtual}_${dataIso}`;
+      const itensHoje = db.consumoHoje[chaveConsumo] || [];
+
+      let somaHoje = 0;
+      if (itensHoje.length === 0) {
+        listaConsumo.innerHTML = '<p class="xp-muted">Nenhum item adicionado nesta sessão.</p>';
+      } else {
+        listaConsumo.innerHTML = itensHoje.map(item => {
+          const prod = db.produtos.find(p => p.id === item.idProd);
+          if (!prod) return '';
+          const sub = arredondar(item.qtd * prod.preco);
+          somaHoje = arredondar(somaHoje + sub);
+          return `
+            <div class="xp-item-row">
+              <span><strong>${item.qtd}x</strong> ${prod.nome}</span>
+              <div class="xp-item-actions">
+                <span>R$ ${sub.toFixed(2)}</span>
+                <button type="button" class="xp-mini-btn" onclick="alterarQtdConsumo(${prod.id}, -1)">-</button>
+                <button type="button" class="xp-mini-btn" onclick="alterarQtdConsumo(${prod.id}, 1)">+</button>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+      elTotalHoje.innerText = `R$ ${somaHoje.toFixed(2)}`;
+
+      const dadosSaldo = db.saldos[clienteAtual] || { total: 0, historico: [] };
+      elSaldoAtual.innerText = `R$ ${dadosSaldo.total.toFixed(2)}`;
+
+      if (!dadosSaldo.historico || dadosSaldo.historico.length === 0) {
+        elHistCliente.innerHTML = '<p class="xp-muted">Conta quitada! Nenhum débito pendente.</p>';
+      } else {
+        elHistCliente.innerHTML = dadosSaldo.historico.map(h => `
+          <div class="xp-item-row">
+            <span><strong>${h.data}:</strong> ${h.descricao}</span>
+            <span>R$ ${h.valor.toFixed(2)}</span>
+          </div>
+        `).join('');
+      }
+    }
+
+    function renderizarCadastros() {
+      const listaClientes = document.getElementById('lista-clientes-cadastrados');
+      const listaProdutos = document.getElementById('lista-produtos-cadastrados');
+
+      listaClientes.innerHTML = db.clientes.map(c => `
+        <div class="p-3 border rounded-lg bg-slate-50 flex justify-between items-center text-xs">
+          <span class="font-bold text-slate-800 text-sm">${c.emoji} ${c.nome}</span>
+          <div class="flex items-center gap-3">
+            <button type="button" class="xp-btn" onclick="editarCliente('${c.id}')">✏️ Editar</button>
+            <button type="button" class="xp-btn" onclick="removerCliente('${c.id}')">🗑️ Remover</button>
+          </div>
+        </div>
+      `).join('');
+
+      listaProdutos.innerHTML = db.produtos.map(p => `
+        <div class="p-3 border rounded-lg bg-slate-50 flex justify-between items-center text-xs">
+          <div>
+            <span class="font-bold text-slate-800 text-sm block">${p.nome}</span>
+            <span class="text-slate-500">Custo: R$ ${(p.custo || 0).toFixed(2)} | Venda: R$ ${p.preco.toFixed(2)}</span>
+          </div>
+          <div class="flex items-center gap-3">
+            <button type="button" class="xp-btn" onclick="editarProduto(${p.id})">✏️ Editar</button>
+            <button type="button" class="xp-btn" onclick="removerProduto(${p.id})">🗑️ Remover</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function renderizarLucro() {
+      const totalRecebido = arredondar(db.pagamentos.reduce((acc, p) => acc + p.valor, 0));
+      const totalFiado = arredondar(Object.values(db.saldos).reduce((acc, s) => acc + (s.total || 0), 0));
+      const totalVendasGeral = arredondar(totalRecebido + totalFiado);
+      const totalGastos = arredondar(db.compras.reduce((acc, c) => acc + c.valor, 0));
+      const lucroLiquido = arredondar(totalVendasGeral - totalGastos);
+
+      document.getElementById('stat-lucro-vendas').innerText = `R$ ${totalVendasGeral.toFixed(2)}`;
+      document.getElementById('stat-lucro-recebido').innerText = `R$ ${totalRecebido.toFixed(2)}`;
+      document.getElementById('stat-lucro-fiado').innerText = `R$ ${totalFiado.toFixed(2)}`;
+      document.getElementById('stat-lucro-gastos').innerText = `R$ ${totalGastos.toFixed(2)}`;
+
+      const elLucro = document.getElementById('stat-lucro-liquido');
+      const cardLucro = document.getElementById('card-lucro-liquido');
+      elLucro.innerText = `R$ ${lucroLiquido.toFixed(2)}`;
+
+      if (lucroLiquido >= 0) {
+        cardLucro.className = "p-5 bg-emerald-50 border-2 border-emerald-300 rounded-xl mb-6 flex justify-between items-center";
+        elLucro.className = "text-3xl font-extrabold text-emerald-700";
+      } else {
+        cardLucro.className = "p-5 bg-red-50 border-2 border-red-300 rounded-xl mb-6 flex justify-between items-center";
+        elLucro.className = "text-3xl font-extrabold text-red-700";
+      }
+
+      document.getElementById('tabela-margem-produtos').innerHTML = db.produtos.map(p => {
+        const custo = p.custo || 0;
+        const lucroItem = arredondar(p.preco - custo);
+        const margemPct = p.preco > 0 ? ((lucroItem / p.preco) * 100).toFixed(0) : 0;
+
+        return `
+          <div class="p-3 border rounded-xl bg-slate-50 text-xs flex justify-between items-center">
+            <div>
+              <span class="font-bold text-slate-800 text-sm block">${p.nome}</span>
+              <span class="text-slate-500">Custo: R$ ${custo.toFixed(2)} | Venda: R$ ${p.preco.toFixed(2)}</span>
+            </div>
+            <div class="text-right">
+              <span class="font-bold text-emerald-600 block text-sm">+R$ ${lucroItem.toFixed(2)}</span>
+              <span class="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-1.5 py-0.5 rounded-full">${margemPct}% margem</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function salvarCompra(e) {
+      e.preventDefault();
+      const desc = document.getElementById('input-desc-compra').value.trim();
+      const valor = parseFloat(document.getElementById('input-valor-compra').value);
+      const dataHoje = new Date().toLocaleDateString('pt-BR');
+
+      if (desc && valor) {
+        const novaCompra = { id: Date.now(), descricao: desc, valor: arredondar(valor), data: dataHoje };
+        db.compras.unshift(novaCompra);
+        salvarLocal();
+
+        if (supabaseClient) {
+          executarNaNuvem(supabaseClient.from('compras').insert([novaCompra]));
+        }
+
+        document.getElementById('input-desc-compra').value = '';
+        document.getElementById('input-valor-compra').value = '';
+        renderizarTudo();
+      }
+    }
+
+    function removerCompra(id) {
+      if (confirm('Deseja excluir este registro de gasto?')) {
+        db.compras = db.compras.filter(c => c.id !== id);
+        salvarLocal();
+
+        if (supabaseClient) {
+          executarNaNuvem(supabaseClient.from('compras').delete().eq('id', id));
+        }
+
+        renderizarTudo();
+      }
+    }
+
+    function renderizarCompras() {
+      const conteiner = document.getElementById('lista-compras-registradas');
+      if (db.compras.length === 0) {
+        conteiner.innerHTML = '<p class="text-slate-400 text-xs italic">Nenhuma compra/gasto registrado ainda.</p>';
+        return;
+      }
+
+      conteiner.innerHTML = db.compras.map(c => `
+        <div class="p-3 border rounded-lg bg-slate-50 flex justify-between items-center text-xs">
+          <div>
+            <span class="font-bold text-slate-800 text-sm block">${c.descricao}</span>
+            <span class="text-slate-500">Comprado em ${c.data}</span>
+          </div>
+          <div class="flex items-center gap-3">
+            <span class="font-bold text-red-600 text-sm">R$ ${c.valor.toFixed(2)}</span>
+            <button type="button" onclick="removerCompra(${c.id})" class="xp-btn">🗑️</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function renderizarDevedores() {
+      const selectFiltroData = document.getElementById('filtro-data-evento');
+      const dataFiltroSelecionada = selectFiltroData.value;
+
+      let datasUnicas = new Set();
+      Object.values(db.saldos).forEach(s => {
+        if (s.historico) {
+          s.historico.forEach(h => { if (h.dataIso) datasUnicas.add(h.dataIso); });
+        }
+      });
+
+      let opcoesDataHTML = '<option value="">Todas as Datas (Acumulado)</option>';
+      Array.from(datasUnicas).sort().reverse().forEach(dIso => {
+        const dBr = formatarDataBR(dIso);
+        opcoesDataHTML += `<option value="${dIso}" ${dIso === dataFiltroSelecionada ? 'selected' : ''}>Evento de ${dBr}</option>`;
+      });
+      selectFiltroData.innerHTML = opcoesDataHTML;
+
+      const conteiner = document.getElementById('lista-saldos-devedores');
+
+      const devedores = db.clientes.map(c => {
+        const historicoCliente = (db.saldos[c.nome] && db.saldos[c.nome].historico) || [];
+
+        let historicoFiltrado = historicoCliente;
+        if (dataFiltroSelecionada) {
+          historicoFiltrado = historicoCliente.filter(h => h.dataIso === dataFiltroSelecionada);
+        }
+
+        const saldoFiltrado = arredondar(historicoFiltrado.reduce((acc, h) => acc + h.valor, 0));
+
+        return {
+          ...c,
+          saldo: dataFiltroSelecionada ? saldoFiltrado : arredondar((db.saldos[c.nome] && db.saldos[c.nome].total) || 0),
+          historico: historicoFiltrado
+        };
+      }).filter(d => d.saldo > 0).sort((a, b) => b.saldo - a.saldo);
+
+      const totalGeralAReceber = arredondar(devedores.reduce((acc, d) => acc + d.saldo, 0));
+      document.getElementById('stat-total-a-receber').innerText = `R$ ${totalGeralAReceber.toFixed(2)}`;
+
+      if (devedores.length === 0) {
+        conteiner.innerHTML = '<p class="text-slate-400 text-center py-8 col-span-full">Nenhuma pendência encontrada para este filtro! 🎉</p>';
+        return;
+      }
+
+      conteiner.innerHTML = devedores.map(d => `
+        <div class="border rounded-xl p-4 bg-slate-50 space-y-3">
+          <div class="flex justify-between items-center border-b pb-2">
+            <span class="font-bold text-slate-800 text-base flex items-center gap-2">
+              <span class="text-2xl">${d.emoji}</span> ${d.nome}
+            </span>
+            <span class="font-bold text-red-600 text-lg">R$ ${d.saldo.toFixed(2)}</span>
+          </div>
+          <p class="text-[11px] font-bold text-slate-500 uppercase">Detalhamento no Evento:</p>
+          <div class="space-y-1 max-h-36 overflow-y-auto pr-1">
+            ${d.historico.map(h => `
+              <div class="flex justify-between text-xs text-slate-600">
+                <span><b class="text-slate-800">${h.data}</b>: ${h.descricao}</span>
+                <span class="font-semibold text-slate-700">R$ ${h.valor.toFixed(2)}</span>
+              </div>
+            `).join('')}
+          </div>
+          <button type="button" onclick="selecionarCliente('${escaparAspas(d.nome)}'); mudarAba('comandas');" class="w-full py-2 bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold rounded-lg text-xs">
+            Abrir Conta / Receber
+          </button>
+        </div>
+      `).join('');
+    }
+
+    function renderizarHistorico() {
+      const selectFiltro = document.getElementById('filtro-cliente-historico');
+      const valFiltro = selectFiltro.value;
+
+      selectFiltro.innerHTML = '<option value="">Todos os clientes</option>' +
+        db.clientes.map(c => `<option value="${c.nome}" ${c.nome === valFiltro ? 'selected' : ''}>${c.nome}</option>`).join('');
+
+      let pgtsFiltrados = db.pagamentos;
+      if (valFiltro) pgtsFiltrados = pgtsFiltrados.filter(p => p.cliente === valFiltro);
+
+      const totalArrecadado = arredondar(pgtsFiltrados.reduce((acc, p) => acc + p.valor, 0));
+      document.getElementById('stat-total-arrecadado').innerText = `R$ ${totalArrecadado.toFixed(2)}`;
+
+      const conteiner = document.getElementById('lista-historico-pagamentos');
+      if (pgtsFiltrados.length === 0) {
+        conteiner.innerHTML = '<p class="text-slate-400 text-center py-6 text-xs">Nenhum pagamento registrado ainda.</p>';
+        return;
+      }
+
+      conteiner.innerHTML = pgtsFiltrados.map(p => `
+        <div class="p-3 border rounded-lg bg-slate-50 flex justify-between items-center text-xs">
+          <div>
+            <span class="font-bold text-slate-800 text-sm block">${p.cliente}</span>
+            <span class="text-slate-500">${p.data} • Pago via ${p.formaPagamento}</span>
+          </div>
+          <div class="flex items-center gap-3">
+            <span class="font-bold text-emerald-600 text-base">R$ ${p.valor.toFixed(2)}</span>
+            <button type="button" onclick="estornarPagamento(${p.id})" class="text-xs bg-red-100 hover:bg-red-200 text-red-700 font-bold px-2 py-1 rounded border border-red-300" title="Cancelar este pagamento">
+              ❌ Estornar
+            </button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // =========================================================
+    // CADASTROS DA ABA CONFIGURAÇÕES
+    // =========================================================
+    function salvarCliente(e) {
+      e.preventDefault();
+      const input = document.getElementById('input-nome-cliente');
+      const selectEmoji = document.getElementById('select-emoji-cliente');
+      const nome = input.value.trim();
+      const emoji = selectEmoji.value;
+
+      if (nome) {
+        if (db.clientes.some(c => c.nome.toLowerCase() === nome.toLowerCase())) return alert('Cliente já cadastrado!');
+        const novoCliente = { id: String(Date.now()), nome, emoji };
+        db.clientes.push(novoCliente);
+        salvarLocal();
+
+        if (supabaseClient) {
+          executarNaNuvem(supabaseClient.from('clientes').insert([novoCliente]));
+        }
+
+        input.value = '';
+        renderizarTudo();
+      }
+    }
+
+    function editarCliente(id) {
+      const cliente = db.clientes.find(c => String(c.id) === String(id));
+      if (!cliente) return;
+      const novoNome = prompt('Nome do cliente:', cliente.nome);
+      if (novoNome && novoNome.trim() !== '') {
+        const antigo = cliente.nome;
+        cliente.nome = novoNome.trim();
+
+        if (db.saldos[antigo]) {
+          db.saldos[cliente.nome] = db.saldos[antigo];
+          delete db.saldos[antigo];
+        }
+        if (clienteAtual === antigo) {
+          clienteAtual = cliente.nome;
+        }
+        salvarLocal();
+
+        if (supabaseClient) {
+          const ops = [
+            supabaseClient.from('clientes').update({ nome: cliente.nome }).eq('id', cliente.id)
+          ];
+          if (db.saldos[cliente.nome]) {
+            ops.push(
+              supabaseClient.from('saldos').delete().eq('cliente_nome', antigo),
+              supabaseClient.from('saldos').upsert([{
+                cliente_nome: cliente.nome,
+                total: db.saldos[cliente.nome].total,
+                historico: db.saldos[cliente.nome].historico
+              }])
+            );
+          }
+          executarNaNuvem(Promise.all(ops));
+        }
+
+        renderizarTudo();
+      }
+    }
+
+    function removerCliente(id) {
+      const cliente = db.clientes.find(c => String(c.id) === String(id));
+      if (!cliente) return;
+      if (confirm(`Remover ${cliente.nome}?`)) {
+        db.clientes = db.clientes.filter(c => String(c.id) !== String(id));
+        delete db.saldos[cliente.nome];
+        if (clienteAtual === cliente.nome) {
+          clienteAtual = null;
+        }
+        salvarLocal();
+
+        if (supabaseClient) {
+          executarNaNuvem(
+            Promise.all([
+              supabaseClient.from('clientes').delete().eq('id', cliente.id),
+              supabaseClient.from('saldos').delete().eq('cliente_nome', cliente.nome)
+            ])
+          );
+        }
+
+        renderizarTudo();
+      }
+    }
+
+    function salvarProduto(e) {
+      e.preventDefault();
+      const nome = document.getElementById('input-nome-prod').value.trim();
+      const custo = parseFloat(document.getElementById('input-custo-prod').value) || 0;
+      const preco = parseFloat(document.getElementById('input-preco-prod').value);
+      if (nome && preco > 0) {
+        const novoProd = { id: Date.now(), nome, custo: arredondar(custo), preco: arredondar(preco) };
+        db.produtos.push(novoProd);
+        salvarLocal();
+
+        if (supabaseClient) {
+          executarNaNuvem(supabaseClient.from('produtos').insert([novoProd]));
+        }
+
+        document.getElementById('input-nome-prod').value = '';
+        document.getElementById('input-custo-prod').value = '';
+        document.getElementById('input-preco-prod').value = '';
+        renderizarTudo();
+      }
+    }
+
+    function editarProduto(id) {
+      const prod = db.produtos.find(p => p.id === id);
+      if (!prod) return;
+      const novoNome = prompt('Nome:', prod.nome);
+      const novoCusto = prompt('Custo (Ex: 2.50):', prod.custo || 0);
+      const novoPreco = prompt('Preço de Venda (Ex: 6.00):', prod.preco);
+
+      if (novoNome && novoPreco) {
+        prod.nome = novoNome.trim();
+        prod.custo = arredondar(parseFloat(String(novoCusto).replace(',', '.')) || 0);
+        prod.preco = arredondar(parseFloat(String(novoPreco).replace(',', '.')));
+        salvarLocal();
+
+        if (supabaseClient) {
+          executarNaNuvem(
+            supabaseClient.from('produtos').update({
+              nome: prod.nome,
+              custo: prod.custo,
+              preco: prod.preco
+            }).eq('id', prod.id)
+          );
+        }
+
+        renderizarTudo();
+      }
+    }
+
+    function removerProduto(id) {
+      if (confirm('Remover produto?')) {
+        db.produtos = db.produtos.filter(p => p.id !== id);
+        salvarLocal();
+
+        if (supabaseClient) {
+          executarNaNuvem(supabaseClient.from('produtos').delete().eq('id', id));
+        }
+
+        renderizarTudo();
+      }
+    }
+
+    function limparConsumoHoje() {
+      if (clienteAtual) {
+        const dataIso = document.getElementById('input-data-evento').value;
+        const chaveConsumo = `${clienteAtual}_${dataIso}`;
+        if (db.consumoHoje[chaveConsumo]) {
+          delete db.consumoHoje[chaveConsumo];
+          salvarLocal();
+          renderizarTudo();
+        }
+      }
+    }
+
+    function renderizarTudo() {
+      renderizarComandas();
+      renderizarDevedores();
+      renderizarHistorico();
+      renderizarLucro();
+      renderizarCompras();
+      renderizarCadastros();
+    }
+
+    function atualizarRelogioXP() {
+      const agora = new Date();
+      const horas = String(agora.getHours()).padStart(2, '0');
+      const mins = String(agora.getMinutes()).padStart(2, '0');
+      document.getElementById('xp-clock').innerText = `${horas}:${mins}`;
+    }
+
+    setInterval(atualizarRelogioXP, 10000);
+    atualizarRelogioXP();
+    preencherSelectEmojis();
+    renderizarTudo();
+    inicializarSupabase();
+  </script>
+</body>
+</html>
